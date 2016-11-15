@@ -11,27 +11,30 @@
 
 	socket.on('newMessage', function (newMessage) {
 		var formattedTime = moment(newMessage.createdAt).format('h:mm a');
-		var li = $('<li></li>');
-		li.text(`${newMessage.from} ${formattedTime}: ${newMessage.text}`);
-		$('#messages').append(li);
+		var template = $('#message-template').html();
+		var html = Mustache.render(template, {
+			text: newMessage.text,
+			from: newMessage.from,
+			createdAt: formattedTime
+		});
+		$('#messages').append(html);
 	});
 
 	socket.on('newLocationMessage', function(newLocationMessage) {
 		var formattedTime = moment(newLocationMessage.createdAt).format('h:mm a');
-		var li = $('<li></li>');
-		var a = $('<a target="_blank">My current location</a>');
-
-		li.text(`${newLocationMessage.from} ${formattedTime}: `);
-		a.attr('href', newLocationMessage.url);
-		li.append(a);
-		$('#messages').append(li);
+		var template = $('#location-message-template').html();
+		console.log(template);
+		var html = Mustache.render(template, {
+			from: newLocationMessage.from,
+			createdAt: formattedTime,
+			url: newLocationMessage.url
+		});
+		$('#messages').append(html);
 	});
 
 	$('#message-form').on('submit', function (evt) {
 		evt.preventDefault();
-
 		var messageTextBox = $('[name=message]');
-
 		socket.emit('createMessage',{
 			from: 'User',
 			text: messageTextBox.val()
@@ -41,16 +44,12 @@
 	});
 
 	var locationButton = $('#send-location');
-
 	locationButton.on('click', function (evt) {
 		evt.preventDefault();
-
 		if (!navigator.geolocation) {
 			return alert('Geolocation not supported by your browser.');
 		}
-
 		locationButton.attr('disabled', 'disabled').text('Sending location...');
-
 		navigator.geolocation.getCurrentPosition(function (position) {
 			socket.emit('createLocationMessage', {
 				latitude: position.coords.latitude,
